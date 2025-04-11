@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
+import '../../services/storage_service.dart';
 
 class AddReportScreen extends StatefulWidget {
   final UserModel patient;
@@ -19,6 +22,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
   
   String _selectedSeverity = 'Mild';
   String? _imageUrl;
+  XFile? _selectedImage;
   
   bool _isLoading = false;
   String? _errorMessage;
@@ -32,6 +36,22 @@ class _AddReportScreenState extends State<AddReportScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await StorageService.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+          _imageUrl = null; // Clear previous URL since we have a new image
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting image: ${e.toString()}')),
+      );
+    }
+  }
+
   Future<void> _addReport() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -43,6 +63,27 @@ class _AddReportScreenState extends State<AddReportScreen> {
         // Validate required fields
         if (_diagnosisController.text.trim().isEmpty) {
           throw Exception('Diagnosis is required');
+        }
+        
+        // Upload image if selected
+        if (_selectedImage != null) {
+          // Show uploading indicator
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Uploading image...'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+          
+          // Upload to Firebase Storage
+          _imageUrl = await StorageService.uploadImage(
+            _selectedImage!, 
+            'psoriasis_images/${widget.patient.uid}'
+          );
+          
+          if (_imageUrl == null) {
+            throw Exception('Failed to upload image. Please try again.');
+          }
         }
         
         // Validate image (optional for doctor but recommended)
@@ -147,31 +188,73 @@ class _AddReportScreenState extends State<AddReportScreen> {
                     border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image, size: 60, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text(
-                          _imageUrl == null ? 'No Image Selected' : 'Image Uploaded',
-                          style: const TextStyle(color: Colors.grey),
+                  child: _selectedImage != null
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(7),
+                              child: Image.file(
+                                File(_selectedImage!.path),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.image, size: 60, color: Colors.grey),
+                                        const SizedBox(height: 8),
+                                        const Text('Image Preview Not Available'),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton.icon(
+                                          onPressed: _pickImage,
+                                          icon: const Icon(Icons.upload),
+                                          label: const Text('Change Image'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black54,
+                                radius: 16,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedImage = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.image, size: 60, color: Colors.grey),
+                              const SizedBox(height: 8),
+                              Text(
+                                _imageUrl == null ? 'No Image Selected' : 'Image Uploaded',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _pickImage,
+                                icon: const Icon(Icons.upload),
+                                label: const Text('Upload Image'),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // In a real app, you would implement image upload here
-                            // For now, just simulate setting an image URL
-                            setState(() {
-                              _imageUrl = 'https://example.com/dummy-image.jpg';
-                            });
-                          },
-                          icon: const Icon(Icons.upload),
-                          label: const Text('Upload Image'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 
@@ -268,4 +351,4 @@ class _AddReportScreenState extends State<AddReportScreen> {
       ),
     );
   }
-} 
+}

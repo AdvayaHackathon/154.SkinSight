@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.skin_sight"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.skin_sight"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
+import '../../services/storage_service.dart';
 
 class AddPatientReportScreen extends StatefulWidget {
   final UserModel patient;
@@ -18,6 +21,7 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   
   String _selectedSeverity = 'Mild';
   String? _imageUrl;
+  XFile? _selectedImage;
   
   bool _isLoading = false;
   String? _errorMessage;
@@ -28,6 +32,38 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   void dispose() {
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await StorageService.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+          _imageUrl = null; // Clear previous URL since we have a new image
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting image: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _takePicture() async {
+    try {
+      final XFile? image = await StorageService.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+          _imageUrl = null; // Clear previous URL since we have a new image
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error taking picture: ${e.toString()}')),
+      );
+    }
   }
 
   Future<void> _addReport() async {
@@ -41,7 +77,7 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
       }
       
       // Check if image is uploaded
-      if (_imageUrl == null) {
+      if (_selectedImage == null && _imageUrl == null) {
         setState(() {
           _errorMessage = 'Please upload an image of your skin condition.';
         });
@@ -57,6 +93,27 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
         // Add additional validation
         if (widget.patient.pid == null || widget.patient.pid!.isEmpty) {
           throw Exception('Patient ID is missing. Please contact support.');
+        }
+
+        // Upload image if selected
+        if (_selectedImage != null) {
+          // Show uploading indicator
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Uploading image...'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+          
+          // Upload to Firebase Storage
+          _imageUrl = await StorageService.uploadImage(
+            _selectedImage!, 
+            'psoriasis_images/${widget.patient.uid}'
+          );
+          
+          if (_imageUrl == null) {
+            throw Exception('Failed to upload image. Please try again.');
+          }
         }
 
         final report = await ReportService.addReport(
@@ -145,31 +202,96 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                     border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image, size: 60, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text(
-                          _imageUrl == null ? 'No Image Selected' : 'Image Uploaded',
-                          style: const TextStyle(color: Colors.grey),
+                  child: _selectedImage != null
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(7),
+                              child: Image.file(
+                                File(_selectedImage!.path),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.image, size: 60, color: Colors.grey),
+                                        const SizedBox(height: 8),
+                                        const Text('Image Preview Not Available'),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            ElevatedButton.icon(
+                                              onPressed: _pickImage,
+                                              icon: const Icon(Icons.photo_library),
+                                              label: const Text('Gallery'),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            ElevatedButton.icon(
+                                              onPressed: _takePicture,
+                                              icon: const Icon(Icons.camera_alt),
+                                              label: const Text('Camera'),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black54,
+                                radius: 16,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedImage = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_a_photo, size: 60, color: Colors.grey),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Take or upload a photo of your skin condition',
+                                style: TextStyle(color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _pickImage,
+                                    icon: const Icon(Icons.photo_library),
+                                    label: const Text('Gallery'),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: _takePicture,
+                                    icon: const Icon(Icons.camera_alt),
+                                    label: const Text('Camera'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // In a real app, you would implement image upload here
-                            // For now, just simulate setting an image URL
-                            setState(() {
-                              _imageUrl = 'https://example.com/dummy-image.jpg';
-                            });
-                          },
-                          icon: const Icon(Icons.upload),
-                          label: const Text('Upload Image'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 
@@ -259,4 +381,4 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
       ),
     );
   }
-} 
+}
