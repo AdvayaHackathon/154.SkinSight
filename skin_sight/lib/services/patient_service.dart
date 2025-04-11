@@ -27,21 +27,21 @@ class PatientService {
   static Future<UserModel?> addPatientToDoctor({
     required String doctorId, 
     required String patientEmail,
-    required String patientName,
+    required String patientPid,
     String? patientPhone,
   }) async {
     try {
-      // Check if patient already exists with this email
-      final patientQuery = await _usersCollection
-          .where('email', isEqualTo: patientEmail)
-          .where('userType', isEqualTo: 'patient')
+      // First check if patient already exists with this PID
+      final patientByPidQuery = await _usersCollection
+          .where('pid', isEqualTo: patientPid)
+          .limit(1)
           .get();
       
       UserModel? patient;
       
-      if (patientQuery.docs.isNotEmpty) {
-        // Patient already exists
-        final patientDoc = patientQuery.docs.first;
+      if (patientByPidQuery.docs.isNotEmpty) {
+        // Patient already exists with this PID
+        final patientDoc = patientByPidQuery.docs.first;
         final patientData = patientDoc.data() as Map<String, dynamic>;
         
         patient = UserModel.fromJson(patientData);
@@ -50,27 +50,48 @@ class PatientService {
         if (patient.doctorId != doctorId) {
           await _usersCollection.doc(patient.uid).update({
             'doctorId': doctorId,
+            'email': patientEmail, // Update email in case it changed
+            'phoneNumber': patientPhone, // Update phone if provided
           });
         }
       } else {
-        // Create a new patient
-        final String pid = generatePID();
+        // Check if patient exists with this email
+        final patientByEmailQuery = await _usersCollection
+            .where('email', isEqualTo: patientEmail)
+            .where('userType', isEqualTo: 'patient')
+            .get();
         
-        // Create a new user in Firebase Auth would normally happen here
-        // For now, we'll just create the Firestore record
-        
-        final patientDocRef = _usersCollection.doc();
-        patient = UserModel(
-          uid: patientDocRef.id,
-          email: patientEmail,
-          name: patientName,
-          userType: 'patient',
-          phoneNumber: patientPhone,
-          doctorId: doctorId,
-          pid: pid,
-        );
-        
-        await patientDocRef.set(patient.toJson());
+        if (patientByEmailQuery.docs.isNotEmpty) {
+          // Patient exists with this email but different PID
+          final patientDoc = patientByEmailQuery.docs.first;
+          final patientData = patientDoc.data() as Map<String, dynamic>;
+          
+          // Update the patient with the new PID
+          await _usersCollection.doc(patientDoc.id).update({
+            'pid': patientPid,
+            'doctorId': doctorId,
+            'phoneNumber': patientPhone,
+          });
+          
+          // Get the updated patient data
+          final updatedPatientDoc = await _usersCollection.doc(patientDoc.id).get();
+          final updatedPatientData = updatedPatientDoc.data() as Map<String, dynamic>;
+          patient = UserModel.fromJson(updatedPatientData);
+        } else {
+          // Create a new patient with the provided PID
+          final patientDocRef = _usersCollection.doc();
+          patient = UserModel(
+            uid: patientDocRef.id,
+            email: patientEmail,
+            name: "Patient " + patientPid, // Default name using PID
+            userType: 'patient',
+            phoneNumber: patientPhone,
+            doctorId: doctorId,
+            pid: patientPid,
+          );
+          
+          await patientDocRef.set(patient.toJson());
+        }
       }
       
       // Add patient to doctor's patient list
@@ -169,4 +190,4 @@ class PatientService {
       rethrow;
     }
   }
-} 
+}
