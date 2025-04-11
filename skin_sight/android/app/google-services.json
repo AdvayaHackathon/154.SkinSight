@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "406016027670",
+    "project_id": "skinsight-916ed",
+    "storage_bucket": "skinsight-916ed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406016027670:android:d613958c24dad0c7769937",
+        "android_client_info": {
+          "package_name": "com.example.skin_sight"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuMlihqoAHlBOOBrCRcqafV9BoU9gI0rw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
