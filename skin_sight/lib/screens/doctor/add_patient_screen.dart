@@ -14,7 +14,7 @@ class AddPatientScreen extends StatefulWidget {
 class _AddPatientScreenState extends State<AddPatientScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _pidController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   
@@ -23,7 +23,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _pidController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -40,7 +40,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         final patient = await PatientService.addPatientToDoctor(
           doctorId: widget.doctorId,
           patientEmail: _emailController.text.trim(),
-          patientName: _nameController.text.trim(),
+          patientPid: _pidController.text.trim(),
           patientPhone: _phoneController.text.isEmpty ? null : _phoneController.text.trim(),
         );
 
@@ -99,7 +99,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'If the patient already exists in our system, they will be linked to your account. If not, a new account will be created for them.',
+                          'Enter the patient\'s ID (PID) to add them to your patient list. If the patient already exists in our system, they will be linked to your account.',
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -108,15 +108,20 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                 ),
                 const SizedBox(height: 24),
                 
-                // Name Field
+                // PID Field
                 TextFormField(
-                  controller: _nameController,
+                  controller: _pidController,
                   decoration: const InputDecoration(
-                    labelText: 'Patient Full Name',
-                    prefixIcon: Icon(Icons.person),
+                    labelText: 'Patient ID (PID)',
+                    prefixIcon: Icon(Icons.badge),
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) => Validators.validateName(value),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the patient ID';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 
@@ -174,4 +179,4 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
       ),
     );
   }
-} 
+}
