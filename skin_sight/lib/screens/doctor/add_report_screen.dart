@@ -26,7 +26,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
   final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   
-  String _selectedSeverity = 'Mild';
+  String _selectedBodyLocation = 'trunk';
   String? _imageUrl;
   XFile? _selectedImage;
   
@@ -34,7 +34,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
   String? _errorMessage;
   bool _isEditing = false;
 
-  final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
+  final List<String> _bodyLocations = ['head', 'upper_limbs', 'trunk', 'lower_limbs'];
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
   void _initializeFormData() {
     if (widget.reportToEdit != null) {
       _isEditing = true;
-      _selectedSeverity = widget.reportToEdit!.severity;
+      _selectedBodyLocation = widget.reportToEdit!.bodyLocation;
       _diagnosisController.text = widget.reportToEdit!.diagnosis ?? '';
       _notesController.text = widget.reportToEdit!.notes ?? '';
       _imageUrl = widget.reportToEdit!.imageUrl;
@@ -126,7 +126,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
           // Update existing report
           report = await ReportService.updateReport(
             reportId: widget.reportToEdit!.id,
-            severity: _selectedSeverity,
+            bodyLocation: _selectedBodyLocation,
             diagnosis: _diagnosisController.text.trim(),
             imageUrl: _imageUrl ?? widget.reportToEdit!.imageUrl,
             notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -153,7 +153,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
             patientId: widget.patient.uid,
             doctorId: widget.patient.doctorId!,
             pid: widget.patient.pid!,
-            severity: _selectedSeverity,
+            bodyLocation: _selectedBodyLocation,
             diagnosis: _diagnosisController.text.trim(),
             imageUrl: _imageUrl,
             notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -583,7 +583,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Severity Level',
+                                      'Body Location',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
@@ -600,20 +600,24 @@ class _AddReportScreenState extends State<AddReportScreen> {
                                         decoration: const InputDecoration(
                                           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                           border: InputBorder.none,
-                                          hintText: 'Select severity level',
+                                          hintText: 'Select body location',
                                         ),
-                                        value: _selectedSeverity,
+                                        value: _selectedBodyLocation,
                                         isExpanded: true,
                                         icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0A8754)),
-                                        items: _severityLevels.map((severity) {
+                                        items: _bodyLocations.map((location) {
                                           return DropdownMenuItem(
-                                            value: severity,
-                                            child: Text(severity),
+                                            value: location,
+                                            child: Text(location
+                                                .replaceAll('_', ' ')
+                                                .split(' ')
+                                                .map((word) => word[0].toUpperCase() + word.substring(1))
+                                                .join(' ')),
                                           );
                                         }).toList(),
                                         onChanged: (value) {
                                           setState(() {
-                                            _selectedSeverity = value!;
+                                            _selectedBodyLocation = value!;
                                           });
                                         },
                                       ),

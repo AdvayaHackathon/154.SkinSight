@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path/path.dart' show join;
@@ -32,6 +33,7 @@ class _CameraOverlayScreenState extends State<CameraOverlayScreen> with WidgetsB
   XFile? _overlayImage;
   Color _overlayTint = Colors.blue.withOpacity(0.1); // Slight blue tint to distinguish overlay
   bool _showGrid = true; // Show alignment grid on overlay
+  bool _showControls = true; // Toggle for showing/hiding controls
   
   @override
   void initState() {
@@ -231,7 +233,10 @@ class _CameraOverlayScreenState extends State<CameraOverlayScreen> with WidgetsB
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text('Loading Camera...', style: TextStyle(color: Colors.white)),
+          title: Text(
+            'Loading Camera: ${_getBodyLocationDisplayName()}',
+            style: const TextStyle(color: Colors.white)
+          ),
         ),
         body: Center(
           child: Column(
@@ -323,161 +328,198 @@ class _CameraOverlayScreenState extends State<CameraOverlayScreen> with WidgetsB
                   ),
                   
                   // Optional grid overlay for alignment
-                  if (_showGrid)
-                    Opacity(
-                      opacity: _overlayOpacity * 0.6,
-                      child: CustomPaint(
-                        painter: GridPainter(
-                          lineColor: Colors.white.withOpacity(0.5),
-                          lineWidth: 1,
-                          gridSize: 3, // 3x3 grid
-                        ),
-                        size: Size.infinite,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          
-          // Camera controls
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              color: Colors.black.withOpacity(0.5),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Opacity slider
-                  if (_overlayImage != null)
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.opacity, color: Colors.white),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: _overlayOpacity,
-                                min: 0.0,
-                                max: 1.0, // Increased from 0.7 to 1.0 (100%)
-                                divisions: 10, // More granular control
-                                activeColor: const Color(0xFF0A8754),
-                                inactiveColor: Colors.white24,
-                                label: 'Overlay: ${(_overlayOpacity * 100).round()}%',
-                                onChanged: (value) {
-                                  setState(() {
-                                    _overlayOpacity = value;
-                                  });
-                                },
-                              ),
+                  if (_showGrid && _overlayOpacity > 0)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Opacity(
+                          opacity: min(0.8, _overlayOpacity * 0.8), // Cap grid opacity at 80%
+                          child: CustomPaint(
+                            painter: GridPainter(
+                              lineColor: Colors.white.withOpacity(0.6),
+                              lineWidth: 1,
+                              gridSize: 3, // 3x3 grid
                             ),
-                          ],
+                            size: Size.infinite,
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                      ],
+                      ),
                     ),
-                  
-                  // Camera buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Back button
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      
-                      // Capture button
-                      GestureDetector(
-                        onTap: _isProcessing ? null : _takePicture,
-                        child: Container(
-                          height: 70,
-                          width: 70,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            color: _isProcessing ? Colors.grey : const Color(0xFF0A8754),
-                          ),
-                          child: _isProcessing
-                              ? const Center(
-                                  child: SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 32,
-                                ),
-                        ),
-                      ),
-                      
-                      // Toggle overlay button
-                      IconButton(
-                        icon: Icon(
-                          _overlayImage != null && _overlayOpacity > 0
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                        onPressed: () {
-                          if (_overlayImage != null) {
-                            setState(() {
-                              _overlayOpacity = _overlayOpacity > 0 ? 0 : 0.3;
-                            });
-                          }
-                        },
-                      ),
-                      
-                      // Toggle grid button
-                      if (_overlayImage != null)
-                        IconButton(
-                          icon: Icon(
-                            _showGrid ? Icons.grid_on : Icons.grid_off,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showGrid = !_showGrid;
-                            });
-                          },
-                        ),
-                    ],
-                  ),
                 ],
               ),
             ),
-          ),
           
-          // Guide text
+          // Guide text and toggle controls button
           Positioned(
             top: 50,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              color: Colors.black54,
-              child: const Text(
-                'Align with previous photo using the overlay',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+            child: Column(
+              children: [
+                // Help text with toggleable visibility
+                if (_showControls)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    color: Colors.black54,
+                    child: Text(
+                      'Align ${_getBodyLocationDisplayName()} with previous photo',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  
+                // Optional border for gesture area
+                Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16, top: 8),
+                  child: Material(
+                    color: Colors.black38,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showControls = !_showControls;
+                        });
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(
+                          _showControls ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.white70,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Camera controls
+          if (_showControls)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                color: Colors.black.withOpacity(0.5),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Opacity slider
+                    if (_overlayImage != null)
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.opacity, color: Colors.white),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Slider(
+                                  value: _overlayOpacity,
+                                  min: 0.0,
+                                  max: 0.9, // Reduced from 1.0 to 0.9 (90%)
+                                  divisions: 9, // One division per 10%
+                                  activeColor: const Color(0xFF0A8754),
+                                  inactiveColor: Colors.white24,
+                                  label: 'Overlay: ${(_overlayOpacity * 100).round()}%',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _overlayOpacity = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    
+                    // Camera buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Back button
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        
+                        // Capture button
+                        GestureDetector(
+                          onTap: _isProcessing ? null : _takePicture,
+                          child: Container(
+                            height: 70,
+                            width: 70,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              color: _isProcessing ? Colors.grey : const Color(0xFF0A8754),
+                            ),
+                            child: _isProcessing
+                                ? const Center(
+                                    child: SizedBox(
+                                      width: 30,
+                                      height: 30,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                          ),
+                        ),
+                        
+                        // Toggle overlay button
+                        IconButton(
+                          icon: Icon(
+                            _overlayImage != null && _overlayOpacity > 0
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                          onPressed: () {
+                            if (_overlayImage != null) {
+                              setState(() {
+                                _overlayOpacity = _overlayOpacity > 0 ? 0 : 0.3;
+                              });
+                            }
+                          },
+                        ),
+                        
+                        // Toggle grid button
+                        if (_overlayImage != null)
+                          IconButton(
+                            icon: Icon(
+                              _showGrid ? Icons.grid_on : Icons.grid_off,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showGrid = !_showGrid;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -504,6 +546,15 @@ class _CameraOverlayScreenState extends State<CameraOverlayScreen> with WidgetsB
       _isInitialized = false;
     });
     _setupCamera();
+  }
+
+  // Helper method to get display name for body location
+  String _getBodyLocationDisplayName() {
+    return widget.bodyLocation
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }
 

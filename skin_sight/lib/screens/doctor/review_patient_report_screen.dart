@@ -23,17 +23,20 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
   final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   
-  String _selectedSeverity = 'Mild';
+  String _selectedBodyLocation = 'trunk'; // Default to trunk
+  String? _selectedSeverity; // Make severity nullable
   bool _isLoading = false;
   String? _errorMessage;
 
   final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
+  final List<String> _bodyLocations = ['head', 'upper_limbs', 'trunk', 'lower_limbs'];
 
   @override
   void initState() {
     super.initState();
-    // Initialize with existing report data
-    _selectedSeverity = widget.report.severity;
+    // Initialize fields from the report
+    _selectedBodyLocation = widget.report.bodyLocation;
+    _selectedSeverity = widget.report.severity; // Now safely assigned
     _diagnosisController.text = widget.report.diagnosis ?? '';
     _notesController.text = widget.report.notes ?? '';
   }
@@ -56,6 +59,7 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
         // Update in Firestore using the new method signature
         await ReportService.updateReport(
           reportId: widget.report.id,
+          bodyLocation: _selectedBodyLocation,
           severity: _selectedSeverity,
           diagnosis: _diagnosisController.text.trim(),
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -172,6 +176,7 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
                 const Divider(),
                 const SizedBox(height: 8),
                 
+                // Display body location
                 const Text(
                   'Doctor\'s Assessment',
                   style: TextStyle(
@@ -181,26 +186,59 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Severity Dropdown
+                // Body Location Dropdown
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
-                    labelText: 'Severity Assessment',
+                    labelText: 'Body Location',
                     border: OutlineInputBorder(),
                   ),
-                  value: _selectedSeverity,
-                  items: _severityLevels.map((severity) {
+                  value: _selectedBodyLocation,
+                  items: _bodyLocations.map((location) {
                     return DropdownMenuItem(
-                      value: severity,
-                      child: Text(severity),
+                      value: location,
+                      child: Text(location
+                          .replaceAll('_', ' ')
+                          .split(' ')
+                          .map((word) => word[0].toUpperCase() + word.substring(1))
+                          .join(' ')),
                     );
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedSeverity = value!;
+                      _selectedBodyLocation = value!;
                     });
                   },
                 ),
                 const SizedBox(height: 16),
+                
+                // Severity Dropdown - now optional
+                if (_selectedSeverity != null) // Show severity only if it was present in the original report
+                  DropdownButtonFormField<String?>(
+                    decoration: const InputDecoration(
+                      labelText: 'Severity Assessment (Legacy)',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _selectedSeverity,
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('None'),
+                      ),
+                      ..._severityLevels.map((severity) {
+                        return DropdownMenuItem(
+                          value: severity,
+                          child: Text(severity),
+                        );
+                      }).toList(),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSeverity = value;
+                      });
+                    },
+                  ),
+                if (_selectedSeverity != null)
+                  const SizedBox(height: 16),
                 
                 // Diagnosis Field
                 TextFormField(

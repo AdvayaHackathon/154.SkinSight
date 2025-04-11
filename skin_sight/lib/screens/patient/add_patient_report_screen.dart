@@ -20,19 +20,15 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   
   final TextEditingController _notesController = TextEditingController();
   
-  String _selectedSeverity = 'Mild';
-  String _selectedBodyLocation = 'Skin'; // Default body location
+  String _selectedBodyLocation = 'trunk'; // Default to trunk instead of severity
   String? _imageUrl;
   XFile? _selectedImage;
   
   bool _isLoading = false;
   String? _errorMessage;
 
-  final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
-  final List<String> _bodyLocations = [
-    'Skin', 'Scalp', 'Face', 'Arms', 'Hands', 'Chest', 
-    'Back', 'Abdomen', 'Legs', 'Feet', 'Nails', 'Other'
-  ];
+  // Replace severity levels with specific body locations
+  final List<String> _bodyLocations = ['head', 'upper_limbs', 'trunk', 'lower_limbs'];
 
   @override
   void dispose() {
@@ -143,11 +139,10 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
           patientId: widget.patient.uid,
           doctorId: widget.patient.doctorId!,
           pid: widget.patient.pid!,
-          severity: _selectedSeverity,
+          bodyLocation: _selectedBodyLocation, // Use body location instead of severity
           diagnosis: 'Awaiting doctor review', // Default diagnosis until doctor reviews
           imageUrl: _imageUrl,
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-          bodyLocation: _selectedBodyLocation, // Add body location to report
         );
 
         if (mounted) {
@@ -381,7 +376,11 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                                 items: _bodyLocations.map((location) {
                                   return DropdownMenuItem(
                                     value: location,
-                                    child: Text(location),
+                                    child: Text(location
+                                        .replaceAll('_', ' ')
+                                        .split(' ')
+                                        .map((word) => word[0].toUpperCase() + word.substring(1))
+                                        .join(' ')),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -483,7 +482,7 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'How severe is your condition?',
+                              'Select affected body area',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -500,20 +499,25 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                                 decoration: const InputDecoration(
                                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   border: InputBorder.none,
-                                  hintText: 'Select severity level',
+                                  hintText: 'Select body area',
                                 ),
-                                value: _selectedSeverity,
+                                value: _selectedBodyLocation,
                                 isExpanded: true,
                                 icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0A8754)),
-                                items: _severityLevels.map((severity) {
+                                items: _bodyLocations.map((location) {
                                   return DropdownMenuItem(
-                                    value: severity,
-                                    child: Text(severity),
+                                    value: location,
+                                    // Capitalize and replace underscores with spaces for display
+                                    child: Text(location
+                                        .replaceAll('_', ' ')
+                                        .split(' ')
+                                        .map((word) => word[0].toUpperCase() + word.substring(1))
+                                        .join(' ')),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedSeverity = value!;
+                                    _selectedBodyLocation = value!;
                                   });
                                 },
                               ),

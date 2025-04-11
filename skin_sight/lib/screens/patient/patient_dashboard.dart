@@ -223,24 +223,28 @@ class _PatientDashboardState extends State<PatientDashboard> {
       itemBuilder: (context, index) {
         final report = _reports[index];
         
-        // Determine severity color
-        Color severityColor;
-        switch (report.severity.toLowerCase()) {
-          case 'mild':
-            severityColor = Colors.green;
-            break;
-          case 'moderate':
-            severityColor = Colors.orange;
-            break;
-          case 'severe':
-            severityColor = Colors.deepOrange;
-            break;
-          case 'very severe':
-            severityColor = Colors.red;
-            break;
-          default:
-            severityColor = Colors.blue;
+        // Get severity color
+        Color getSeverityColor(ReportModel report) {
+          // Now using body location instead of severity
+          if (report.severity == null) {
+            return Colors.grey;
+          }
+          
+          switch (report.severity!.toLowerCase()) {
+            case 'mild':
+              return Colors.green;
+            case 'moderate':
+              return Colors.orange;
+            case 'severe':
+              return Colors.deepOrange;
+            case 'very severe':
+              return Colors.red;
+            default:
+              return Colors.grey;
+          }
         }
+        
+        Color severityColor = getSeverityColor(report);
         
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
@@ -282,7 +286,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           border: Border.all(color: severityColor, width: 1),
                         ),
                         child: Text(
-                          report.severity,
+                          _formatBodyLocation(report.bodyLocation),  // Format the body location for display
                           style: TextStyle(
                             color: severityColor,
                             fontWeight: FontWeight.bold,
@@ -608,7 +612,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 ],
                 const SizedBox(height: 16),
                 _buildInfoRow('Date:', _formatDate(report.timestamp)),
-                _buildInfoRow('Severity:', report.severity),
+                _buildInfoRow('Body Location:', _formatBodyLocation(report.bodyLocation)),
+                if (report.severity != null)
+                  _buildInfoRow('Severity (Legacy):', report.severity!),
                 if (report.diagnosis != null)
                   _buildInfoRow('Diagnosis:', report.diagnosis!),
                 if (report.notes != null && report.notes!.isNotEmpty) ...[
@@ -679,5 +685,13 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatBodyLocation(String bodyLocation) {
+    return bodyLocation
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }

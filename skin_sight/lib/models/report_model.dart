@@ -7,10 +7,10 @@ class ReportModel {
   final String pid; // Patient ID
   final String? imageUrl;
   final String? diagnosis;
-  final String severity; // e.g., "Mild", "Moderate", "Severe"
+  final String? severity; // Now optional, for backward compatibility
   final DateTime timestamp;
   final String? notes;
-  final String bodyLocation; // Body location where the image was taken
+  final String bodyLocation; // Required: head, upper_limbs, trunk, lower_limbs
   final Map<String, dynamic>? additionalData;
 
   ReportModel({
@@ -18,12 +18,12 @@ class ReportModel {
     required this.patientId,
     required this.doctorId,
     required this.pid,
-    required this.severity,
     required this.timestamp,
+    required this.bodyLocation, // Now required
+    this.severity, // Now optional
     this.imageUrl,
     this.diagnosis,
     this.notes,
-    this.bodyLocation = 'Skin', // Default to 'Skin' if not specified
     this.additionalData,
   });
 
@@ -35,10 +35,10 @@ class ReportModel {
       pid: json['pid'] ?? '',
       imageUrl: json['imageUrl'],
       diagnosis: json['diagnosis'],
-      severity: json['severity'] ?? 'Unknown',
+      severity: json['severity'], // May be null
       timestamp: (json['timestamp'] as Timestamp).toDate(),
       notes: json['notes'],
-      bodyLocation: json['bodyLocation'] ?? 'Skin',
+      bodyLocation: json['bodyLocation'] ?? 'trunk', // Default to 'trunk' if not specified
       additionalData: json['additionalData'],
     );
   }
@@ -51,7 +51,7 @@ class ReportModel {
       'pid': pid,
       'imageUrl': imageUrl,
       'diagnosis': diagnosis,
-      'severity': severity,
+      'severity': severity, // May be null
       'timestamp': Timestamp.fromDate(timestamp),
       'notes': notes,
       'bodyLocation': bodyLocation,

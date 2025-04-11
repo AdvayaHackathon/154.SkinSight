@@ -14,11 +14,11 @@ class ReportService {
     required String patientId,
     required String doctorId,
     required String pid,
-    required String severity,
+    required String bodyLocation,
+    String? severity,
     String? imageUrl,
     String? diagnosis,
     String? notes,
-    String bodyLocation = 'Skin',
   }) async {
     try {
       // Ensure Firestore is initialized
@@ -30,12 +30,12 @@ class ReportService {
         patientId: patientId,
         doctorId: doctorId,
         pid: pid,
+        bodyLocation: bodyLocation,
         severity: severity,
         timestamp: DateTime.now(),
         imageUrl: imageUrl,
         diagnosis: diagnosis ?? 'Pending diagnosis',
         notes: notes,
-        bodyLocation: bodyLocation,
       );
       
       // Save to Firestore with explicit error handling

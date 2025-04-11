@@ -460,7 +460,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Severity:', report.severity),
+                      _buildInfoRow('Date:', _formatDate(report.timestamp)),
+                      _buildInfoRow('Body Location:', _formatBodyLocation(report.bodyLocation)),
+                      if (report.severity != null)
+                        _buildInfoRow('Severity (Legacy):', report.severity!),
                       if (report.diagnosis != null)
                         _buildInfoRow('Diagnosis:', report.diagnosis!),
                       if (report.notes != null && report.notes!.isNotEmpty) ...[
@@ -750,7 +753,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                 ],
                 const SizedBox(height: 16),
                 _buildInfoRow('Date:', _formatDate(report.timestamp)),
-                _buildInfoRow('Severity:', report.severity),
+                _buildInfoRow('Body Location:', _formatBodyLocation(report.bodyLocation)),
+                if (report.severity != null)
+                  _buildInfoRow('Severity (Legacy):', report.severity!),
                 if (report.diagnosis != null)
                   _buildInfoRow('Diagnosis:', report.diagnosis!),
                 if (report.notes != null && report.notes!.isNotEmpty) ...[
@@ -853,5 +858,13 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+  
+  String _formatBodyLocation(String bodyLocation) {
+    return bodyLocation
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }
