@@ -53,22 +53,13 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
       });
 
       try {
-        // Create updated report
-        final updatedReport = ReportModel(
-          id: widget.report.id,
-          patientId: widget.report.patientId,
-          doctorId: widget.report.doctorId,
-          pid: widget.report.pid,
+        // Update in Firestore using the new method signature
+        await ReportService.updateReport(
+          reportId: widget.report.id,
           severity: _selectedSeverity,
-          timestamp: widget.report.timestamp,
-          imageUrl: widget.report.imageUrl,
           diagnosis: _diagnosisController.text.trim(),
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-          additionalData: widget.report.additionalData,
         );
-        
-        // Update in Firestore
-        await ReportService.updateReport(updatedReport);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

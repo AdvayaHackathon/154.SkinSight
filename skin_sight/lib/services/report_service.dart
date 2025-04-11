@@ -174,11 +174,52 @@ class ReportService {
   }
   
   // Update a report
-  static Future<void> updateReport(ReportModel report) async {
+  static Future<ReportModel> updateReport({
+    required String reportId,
+    String? severity,
+    String? diagnosis,
+    String? imageUrl,
+    String? notes,
+  }) async {
     try {
-      await _reportsCollection.doc(report.id).update(report.toJson());
+      // Get the current report
+      final reportDoc = await _reportsCollection.doc(reportId).get();
+      
+      if (!reportDoc.exists) {
+        throw Exception('Report not found');
+      }
+      
+      // Create a map of fields to update
+      final Map<String, dynamic> updateData = {};
+      
+      if (severity != null) updateData['severity'] = severity;
+      if (diagnosis != null) updateData['diagnosis'] = diagnosis;
+      if (imageUrl != null) updateData['imageUrl'] = imageUrl;
+      if (notes != null) updateData['notes'] = notes;
+      
+      // Add timestamp for the update
+      updateData['lastUpdated'] = FieldValue.serverTimestamp();
+      
+      // Update the document
+      await _reportsCollection.doc(reportId).update(updateData)
+          .timeout(const Duration(seconds: 10), 
+              onTimeout: () => throw Exception('Connection timeout. Please check your internet connection.'));
+      
+      // Get the updated report
+      final updatedDoc = await _reportsCollection.doc(reportId).get();
+      final updatedData = updatedDoc.data() as Map<String, dynamic>;
+      
+      return ReportModel.fromJson(updatedData);
     } catch (e) {
-      rethrow;
+      print('Error in updateReport: $e');
+      if (e is FirebaseException) {
+        if (e.code == 'permission-denied') {
+          throw Exception('Permission denied: You don\'t have access to update this report');
+        } else if (e.code == 'unavailable') {
+          throw Exception('Service unavailable. Please check your internet connection and try again.');
+        }
+      }
+      throw Exception('Failed to update report: ${e.toString()}');
     }
   }
   

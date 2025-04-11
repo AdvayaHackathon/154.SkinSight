@@ -97,192 +97,242 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.patient.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadReports,
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'remove',
-                child: Row(
-                  children: [
-                    Icon(Icons.person_remove, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Remove Patient', style: TextStyle(color: Colors.red)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Gradient header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.7),
                   ],
                 ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ],
-            onSelected: (value) {
-              if (value == 'remove') {
-                _removePatient();
-              }
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Patient Info Card
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.blue.shade100,
-                        radius: 30,
-                        child: const Icon(Icons.person, color: Colors.blue, size: 30),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.patient.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          Text(
+                            'Patient Details',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 4),
-                            Text(widget.patient.email),
-                            if (widget.patient.phoneNumber != null) ...[
+                          ),
+                        ],
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.white),
+                        onSelected: (value) {
+                          if (value == 'remove') {
+                            _removePatient();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'remove',
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_remove, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Remove Patient', style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Patient info card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                          child: Icon(
+                            Icons.person,
+                            color: Theme.of(context).primaryColor,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.patient.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Phone: ${widget.patient.phoneNumber}'),
+                              Text(
+                                widget.patient.email,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              if (widget.patient.pid != null) ...[
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'PID: ${widget.patient.pid}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (widget.patient.phoneNumber != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      widget.patient.phoneNumber!,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Reports section with pull-to-refresh
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.article_outlined,
+                        size: 20,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Medical Reports',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  const Divider(height: 24),
-                  if (widget.patient.pid != null)
-                    Text(
-                      'Patient ID: ${widget.patient.pid}',
-                      style: const TextStyle(
-                        fontSize: 16,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_reports.length} reports',
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
-          ),
-          
-          // Reports Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Psoriasis Reports',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    if (widget.patient.pid != null) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddReportScreen(
-                            patient: widget.patient,
-                          ),
-                        ),
-                      );
-                      
-                      if (result == true) {
-                        _loadReports();
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cannot add reports for patients without a PID')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Report'),
-                ),
-              ],
+            
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadReports,
+                color: Theme.of(context).primaryColor,
+                child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _reports.isEmpty
+                      ? _buildEmptyReportsState()
+                      : _buildReportsList(),
+              ),
             ),
-          ),
-          
-          // Reports List
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _reports.isEmpty
-                    ? _buildEmptyReportsState()
-                    : _buildReportsList(),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildEmptyReportsState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.description_outlined,
-            size: 80,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No Reports Yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddReportScreen(
+                patient: widget.patient,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Add the first psoriasis report for this patient',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () async {
-              if (widget.patient.pid != null) {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddReportScreen(
-                      patient: widget.patient,
-                    ),
-                  ),
-                );
-                
-                if (result == true) {
-                  _loadReports();
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cannot add reports for patients without a PID')),
-                );
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add First Report'),
-          ),
-        ],
+          );
+          
+          if (result == true) {
+            _loadReports();
+          }
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -293,12 +343,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
       itemCount: _reports.length,
       itemBuilder: (context, index) {
         final report = _reports[index];
-        
-        // Check if the report was submitted by the patient
-        final bool isPatientSubmitted = report.diagnosis == 'Awaiting doctor review';
-        
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -307,56 +357,52 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Report #${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0A8754).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Report #${index + 1}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0A8754),
+                        ),
                       ),
                     ),
-                    Row(
-                      children: [
-                        if (isPatientSubmitted)
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.new_releases, size: 16, color: Colors.orange),
-                                SizedBox(width: 4),
-                                Text(
-                                  'New',
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        Text(
-                          _formatDate(report.timestamp),
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _formatDate(report.timestamp),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 if (report.imageUrl != null) ...[
                   Container(
-                    height: 150,
+                    height: 180,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -374,6 +420,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                       ? loadingProgress.cumulativeBytesLoaded /
                                           loadingProgress.expectedTotalBytes!
                                       : null,
+                                  color: const Color(0xFF0A8754),
                                 ),
                                 const SizedBox(height: 8),
                                 const Text('Loading image...'),
@@ -387,7 +434,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.broken_image, size: 40, color: Colors.red),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 16),
                                 Text(
                                   'Failed to load image',
                                   style: TextStyle(color: Colors.red.shade700),
@@ -399,91 +446,104 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                 ],
-                _buildInfoRow('Severity:', report.severity),
-                if (report.diagnosis != null)
-                  _buildInfoRow('Diagnosis:', report.diagnosis!),
-                if (report.notes != null && report.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                
+                // Report Details
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                  Text(report.notes!),
-                ],
-                const SizedBox(height: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoRow('Severity:', report.severity),
+                      if (report.diagnosis != null)
+                        _buildInfoRow('Diagnosis:', report.diagnosis!),
+                      if (report.notes != null && report.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Doctor\'s Notes:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(report.notes!),
+                      ],
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Actions
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        _showReportDetails(report);
-                      },
-                      icon: const Icon(Icons.visibility),
-                      label: const Text('View Details'),
-                    ),
-                    if (isPatientSubmitted)
-                      TextButton.icon(
-                        onPressed: () {
-                          // Navigate to the review screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ReviewPatientReportScreen(
-                                report: report,
-                                patient: widget.patient,
-                              ),
+                    if (report.diagnosis == 'Awaiting doctor review')
+                      Chip(
+                        label: const Text('Needs Review'),
+                        backgroundColor: Colors.orange.shade100,
+                        avatar: const Icon(Icons.pending, size: 16, color: Colors.orange),
+                        padding: const EdgeInsets.all(0),
+                        labelPadding: const EdgeInsets.only(left: 4, right: 8),
+                      )
+                    else
+                      Chip(
+                        label: const Text('Reviewed'),
+                        backgroundColor: Colors.green.shade100,
+                        avatar: const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                        padding: const EdgeInsets.all(0),
+                        labelPadding: const EdgeInsets.only(left: 4, right: 8),
+                      ),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            _showReportDetails(report);
+                          },
+                          icon: const Icon(Icons.visibility, color: Color(0xFF2D8CFF)),
+                          label: const Text(
+                            'View',
+                            style: TextStyle(color: Color(0xFF2D8CFF)),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF2D8CFF).withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ).then((result) {
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddReportScreen(
+                                  patient: widget.patient,
+                                ),
+                              ),
+                            );
+                            
                             if (result == true) {
                               _loadReports();
                             }
-                          });
-                        },
-                        icon: const Icon(Icons.rate_review, color: Colors.blue),
-                        label: const Text('Review', style: TextStyle(color: Colors.blue)),
-                      ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Report'),
-                            content: const Text('Are you sure you want to delete this report?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+                          },
+                          icon: const Icon(Icons.edit, color: Color(0xFF0A8754)),
+                          label: const Text(
+                            'Edit',
+                            style: TextStyle(color: Color(0xFF0A8754)),
                           ),
-                        ) ?? false;
-                        
-                        if (confirmed) {
-                          try {
-                            await ReportService.deleteReport(report.id);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Report deleted successfully')),
-                              );
-                              _loadReports();
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error deleting report: ${e.toString()}')),
-                              );
-                            }
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF0A8754).withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -492,6 +552,70 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyReportsState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.description_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No Reports Yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF212529),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Add a new report or wait for the patient to submit one',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddReportScreen(patient: widget.patient),
+                ),
+              );
+              
+              if (result == true) {
+                _loadReports();
+              }
+            },
+            icon: const Icon(Icons.add_photo_alternate),
+            label: const Text('Add First Report'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -730,4 +854,4 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-} 
+}

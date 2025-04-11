@@ -54,40 +54,66 @@ class _PatientDashboardState extends State<PatientDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Psoriasis Reports'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadReports,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthService.signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/welcome');
-              }
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Patient Info Card
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Gradient header with patient info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'My Psoriasis Reports',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: () async {
+                          await AuthService.signOut();
+                          if (context.mounted) {
+                            Navigator.of(context).pushReplacementNamed('/welcome');
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: Colors.green.shade100,
+                        backgroundColor: Colors.white.withOpacity(0.9),
                         radius: 30,
-                        child: const Icon(Icons.person, color: Colors.green, size: 30),
+                        child: const Icon(Icons.person, color: Color(0xFF0A8754), size: 30),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -99,96 +125,84 @@ class _PatientDashboardState extends State<PatientDashboard> {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(widget.user.email),
-                            if (widget.user.phoneNumber != null) ...[
+                            Text(
+                              widget.user.email,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            if (widget.user.pid != null) ...[
                               const SizedBox(height: 4),
-                              Text('Phone: ${widget.user.phoneNumber}'),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'PID: ${widget.user.pid}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const Divider(height: 24),
-                  if (widget.user.pid != null)
-                    Text(
-                      'Patient ID: ${widget.user.pid}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  if (widget.user.doctorId != null) ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      'You are currently under a doctor\'s care',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.article, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total Reports: ${_reports.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
-          ),
-          
-          // Reports Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Your Psoriasis Reports',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddPatientReportScreen(
-                          patient: widget.user,
-                        ),
-                      ),
-                    );
-                    
-                    if (result == true) {
-                      _loadReports();
-                    }
-                  },
-                  icon: const Icon(Icons.add_photo_alternate),
-                  label: const Text('New Report'),
-                ),
-              ],
+            
+            // Reports section with pull-to-refresh
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadReports,
+                color: Theme.of(context).primaryColor,
+                child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _reports.isEmpty
+                      ? _buildEmptyReportsState()
+                      : _buildReportsList(),
+              ),
             ),
-          ),
-          
-          // Reports List
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _reports.isEmpty
-                    ? _buildEmptyReportsState()
-                    : _buildReportsList(),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          // Navigate to add report screen
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddPatientReportScreen(
-                patient: widget.user,
-              ),
+              builder: (context) => AddPatientReportScreen(patient: widget.user),
             ),
           );
           
@@ -196,60 +210,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
             _loadReports();
           }
         },
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add_a_photo),
-        tooltip: 'Submit new skin report',
-      ),
-    );
-  }
-
-  Widget _buildEmptyReportsState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.description_outlined,
-            size: 80,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No Reports Yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Submit your first skin report or wait for your doctor to add reports',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddPatientReportScreen(
-                    patient: widget.user,
-                  ),
-                ),
-              );
-              
-              if (result == true) {
-                _loadReports();
-              }
-            },
-            icon: const Icon(Icons.add_a_photo),
-            label: const Text('Submit First Report'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
-          ),
-        ],
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add_photo_alternate),
       ),
     );
   }
@@ -260,119 +222,259 @@ class _PatientDashboardState extends State<PatientDashboard> {
       itemCount: _reports.length,
       itemBuilder: (context, index) {
         final report = _reports[index];
+        
+        // Determine severity color
+        Color severityColor;
+        switch (report.severity.toLowerCase()) {
+          case 'mild':
+            severityColor = Colors.green;
+            break;
+          case 'moderate':
+            severityColor = Colors.orange;
+            break;
+          case 'severe':
+            severityColor = Colors.deepOrange;
+            break;
+          case 'very severe':
+            severityColor = Colors.red;
+            break;
+          default:
+            severityColor = Colors.blue;
+        }
+        
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _showReportDetails(report),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Report #${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                // Report header with date and severity
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
                     ),
-                    Text(
-                      _formatDate(report.timestamp),
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatDate(report.timestamp),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                  ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: severityColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: severityColor, width: 1),
+                        ),
+                        child: Text(
+                          report.severity,
+                          style: TextStyle(
+                            color: severityColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                if (report.imageUrl != null) ...[
-                  Container(
-                    height: 150,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        report.imageUrl!,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text('Loading image...'),
-                              ],
+                
+                // Report content
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Image thumbnail
+                      if (report.imageUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 80,
+                            height: 80,
+                            child: Image.network(
+                              report.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.broken_image, size: 40, color: Colors.red),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Failed to load image',
-                                  style: TextStyle(color: Colors.red.shade700),
-                                ),
-                              ],
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      
+                      const SizedBox(width: 16),
+                      
+                      // Report details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              report.diagnosis ?? 'Awaiting diagnosis',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          );
-                        },
+                            const SizedBox(height: 8),
+                            if (report.notes != null && report.notes!.isNotEmpty) ...[
+                              Text(
+                                report.notes!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            if (report.diagnosis == 'Awaiting doctor review')
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.pending,
+                                    size: 16,
+                                    color: Colors.orange.shade700,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Pending review',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade700,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                _buildInfoRow('Severity:', report.severity),
-                if (report.diagnosis != null)
-                  _buildInfoRow('Diagnosis:', report.diagnosis!),
-                if (report.notes != null && report.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Doctor\'s Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(report.notes!),
-                ],
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (report.diagnosis == 'Awaiting doctor review')
-                      Chip(
-                        label: const Text('Pending Review'),
-                        backgroundColor: Colors.orange.shade100,
-                        avatar: const Icon(Icons.pending, size: 16, color: Colors.orange),
+                      
+                      // View details icon
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
                       ),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () {
-                        _showReportDetails(report);
-                      },
-                      icon: const Icon(Icons.visibility),
-                      label: const Text('View Details'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyReportsState() {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/empty_reports.png',
+              height: 200,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Icon(
+                  Icons.description_outlined,
+                  size: 120,
+                  color: Colors.grey.shade300,
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'No Reports Yet',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Submit your first psoriasis report to get started with tracking your condition',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddPatientReportScreen(patient: widget.user),
+                  ),
+                );
+                
+                if (result == true) {
+                  _loadReports();
+                }
+              },
+              icon: const Icon(Icons.add_photo_alternate),
+              label: const Text('Add New Report'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                textStyle: const TextStyle(fontSize: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -578,4 +680,4 @@ class _PatientDashboardState extends State<PatientDashboard> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-} 
+}
