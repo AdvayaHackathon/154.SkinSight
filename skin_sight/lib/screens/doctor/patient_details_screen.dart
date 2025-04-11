@@ -4,6 +4,7 @@ import '../../models/report_model.dart';
 import '../../services/report_service.dart';
 import '../../services/patient_service.dart';
 import 'add_report_screen.dart';
+import 'review_patient_report_screen.dart';
 
 class PatientDetailsScreen extends StatefulWidget {
   final UserModel patient;
@@ -292,6 +293,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
       itemCount: _reports.length,
       itemBuilder: (context, index) {
         final report = _reports[index];
+        final bool isPatientSubmitted = report.diagnosis == 'Awaiting doctor review';
+        
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           child: Padding(
@@ -317,6 +320,32 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     ),
                   ],
                 ),
+                
+                // Patient Submitted Banner
+                if (isPatientSubmitted)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person, color: Colors.blue, size: 16),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Patient Submitted',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                
                 const SizedBox(height: 8),
                 if (report.imageUrl != null) ...[
                   Container(
@@ -342,9 +371,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   _buildInfoRow('Diagnosis:', report.diagnosis!),
                 if (report.notes != null && report.notes!.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  const Text(
-                    'Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    isPatientSubmitted ? 'Patient\'s Notes:' : 'Notes:',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(report.notes!),
                 ],
@@ -359,6 +388,27 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       icon: const Icon(Icons.visibility),
                       label: const Text('View Details'),
                     ),
+                    if (isPatientSubmitted)
+                      TextButton.icon(
+                        onPressed: () {
+                          // Navigate to the review screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewPatientReportScreen(
+                                report: report,
+                                patient: widget.patient,
+                              ),
+                            ),
+                          ).then((result) {
+                            if (result == true) {
+                              _loadReports();
+                            }
+                          });
+                        },
+                        icon: const Icon(Icons.rate_review, color: Colors.blue),
+                        label: const Text('Review', style: TextStyle(color: Colors.blue)),
+                      ),
                     TextButton.icon(
                       onPressed: () async {
                         final confirmed = await showDialog<bool>(

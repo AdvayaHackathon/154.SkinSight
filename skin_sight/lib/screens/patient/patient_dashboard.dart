@@ -3,6 +3,7 @@ import '../../models/user_model.dart';
 import '../../models/report_model.dart';
 import '../../services/report_service.dart';
 import '../../services/auth_service.dart';
+import 'add_patient_report_screen.dart';
 
 class PatientDashboard extends StatefulWidget {
   final UserModel user;
@@ -136,16 +137,35 @@ class _PatientDashboardState extends State<PatientDashboard> {
           ),
           
           // Reports Header
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Your Psoriasis Reports',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddPatientReportScreen(
+                          patient: widget.user,
+                        ),
+                      ),
+                    );
+                    
+                    if (result == true) {
+                      _loadReports();
+                    }
+                  },
+                  icon: const Icon(Icons.add_photo_alternate),
+                  label: const Text('New Report'),
                 ),
               ],
             ),
@@ -160,6 +180,25 @@ class _PatientDashboardState extends State<PatientDashboard> {
                     : _buildReportsList(),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddPatientReportScreen(
+                patient: widget.user,
+              ),
+            ),
+          );
+          
+          if (result == true) {
+            _loadReports();
+          }
+        },
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add_a_photo),
+        tooltip: 'Submit new skin report',
       ),
     );
   }
@@ -184,9 +223,31 @@ class _PatientDashboardState extends State<PatientDashboard> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Your doctor will add reports after your consultations',
+            'Submit your first skin report or wait for your doctor to add reports',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddPatientReportScreen(
+                    patient: widget.user,
+                  ),
+                ),
+              );
+              
+              if (result == true) {
+                _loadReports();
+              }
+            },
+            icon: const Icon(Icons.add_a_photo),
+            label: const Text('Submit First Report'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
           ),
         ],
       ),
@@ -256,15 +317,24 @@ class _PatientDashboardState extends State<PatientDashboard> {
                   Text(report.notes!),
                 ],
                 const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      // View detailed report
-                    },
-                    icon: const Icon(Icons.visibility),
-                    label: const Text('View Details'),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (report.diagnosis == 'Awaiting doctor review')
+                      Chip(
+                        label: const Text('Pending Review'),
+                        backgroundColor: Colors.orange.shade100,
+                        avatar: const Icon(Icons.pending, size: 16, color: Colors.orange),
+                      ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () {
+                        // View detailed report
+                      },
+                      icon: const Icon(Icons.visibility),
+                      label: const Text('View Details'),
+                    ),
+                  ],
                 ),
               ],
             ),

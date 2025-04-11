@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
 
-class AddReportScreen extends StatefulWidget {
+class AddPatientReportScreen extends StatefulWidget {
   final UserModel patient;
   
-  const AddReportScreen({Key? key, required this.patient}) : super(key: key);
+  const AddPatientReportScreen({Key? key, required this.patient}) : super(key: key);
 
   @override
-  State<AddReportScreen> createState() => _AddReportScreenState();
+  State<AddPatientReportScreen> createState() => _AddPatientReportScreenState();
 }
 
-class _AddReportScreenState extends State<AddReportScreen> {
+class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   
   String _selectedSeverity = 'Mild';
@@ -27,33 +26,37 @@ class _AddReportScreenState extends State<AddReportScreen> {
 
   @override
   void dispose() {
-    _diagnosisController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
   Future<void> _addReport() async {
     if (_formKey.currentState!.validate()) {
+      // Check if doctor is assigned
+      if (widget.patient.doctorId == null) {
+        setState(() {
+          _errorMessage = 'You need to be assigned to a doctor before submitting reports.';
+        });
+        return;
+      }
+      
+      // Check if image is uploaded
+      if (_imageUrl == null) {
+        setState(() {
+          _errorMessage = 'Please upload an image of your skin condition.';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
 
       try {
-        // Validate required fields
-        if (_diagnosisController.text.trim().isEmpty) {
-          throw Exception('Diagnosis is required');
-        }
-        
-        // Validate image (optional for doctor but recommended)
-        if (_imageUrl == null) {
-          // For doctors, we'll just show a warning but continue
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No image was uploaded. This is recommended but not required.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+        // Add additional validation
+        if (widget.patient.pid == null || widget.patient.pid!.isEmpty) {
+          throw Exception('Patient ID is missing. Please contact support.');
         }
 
         final report = await ReportService.addReport(
@@ -61,7 +64,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
           doctorId: widget.patient.doctorId!,
           pid: widget.patient.pid!,
           severity: _selectedSeverity,
-          diagnosis: _diagnosisController.text.trim(),
+          diagnosis: 'Awaiting doctor review', // Default diagnosis until doctor reviews
           imageUrl: _imageUrl,
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         );
@@ -71,7 +74,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
           if (report.id.isNotEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Report added successfully'),
+                content: Text('Report submitted successfully to your doctor'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -87,17 +90,9 @@ class _AddReportScreenState extends State<AddReportScreen> {
           setState(() {
             _errorMessage = e.toString().contains('Exception:') 
                 ? e.toString().split('Exception:')[1].trim() 
-                : 'Error adding report: ${e.toString()}';
+                : 'Error submitting report: ${e.toString()}';
             _isLoading = false;
           });
-          
-          // Show error in SnackBar for better visibility
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_errorMessage!),
-              backgroundColor: Colors.red,
-            ),
-          );
         }
       }
     }
@@ -107,7 +102,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Psoriasis Report'),
+        title: const Text('Submit Skin Report'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -117,23 +112,26 @@ class _AddReportScreenState extends State<AddReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Patient Info
+                // Patient Instruction Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Icon(Icons.info_outline, color: Colors.blue, size: 28),
+                        const SizedBox(height: 8),
                         const Text(
-                          'Patient Information',
+                          'Submit a Skin Condition Report',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        _buildInfoRow('Name:', widget.patient.name),
-                        _buildInfoRow('PID:', widget.patient.pid!),
+                        const Text(
+                          'Take a clear photo of your skin condition and provide details about your symptoms. Your doctor will review your submission.',
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),
@@ -178,7 +176,7 @@ class _AddReportScreenState extends State<AddReportScreen> {
                 // Severity Dropdown
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
-                    labelText: 'Severity',
+                    labelText: 'How severe is your condition?',
                     border: OutlineInputBorder(),
                   ),
                   value: _selectedSeverity,
@@ -196,32 +194,40 @@ class _AddReportScreenState extends State<AddReportScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Diagnosis Field
-                TextFormField(
-                  controller: _diagnosisController,
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnosis',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a diagnosis';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
                 // Notes Field
                 TextFormField(
                   controller: _notesController,
                   maxLines: 4,
                   decoration: const InputDecoration(
-                    labelText: 'Notes (Optional)',
+                    labelText: 'Describe your symptoms and concerns',
+                    hintText: 'Include information about pain, itching, when it started, etc.',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please describe your symptoms';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
+                
+                // Doctor Assignment Warning
+                if (widget.patient.doctorId == null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.yellow.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.yellow.shade800),
+                    ),
+                    child: const Text(
+                      'You are not assigned to a doctor yet. Please contact a healthcare provider to be added to their patient list.',
+                      style: TextStyle(color: Colors.brown),
+                    ),
+                  ),
+                
+                const SizedBox(height: 16),
                 
                 // Error Message
                 if (_errorMessage != null)
@@ -234,37 +240,22 @@ class _AddReportScreenState extends State<AddReportScreen> {
                     ),
                   ),
                 
-                // Add Report Button
+                // Submit Report Button
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _addReport,
+                  onPressed: widget.patient.doctorId == null || _isLoading ? null : _addReport,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: Colors.green,
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Add Report', style: TextStyle(fontSize: 16)),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Submit Report to Doctor', 
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-  
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 4),
-          Expanded(child: Text(value)),
-        ],
       ),
     );
   }
