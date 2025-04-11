@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'firebase_service.dart';
+import 'patient_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseService.auth;
@@ -24,6 +25,18 @@ class AuthService {
       );
 
       if (userCredential.user != null) {
+        // Create additional fields based on user type
+        String? pid;
+        List<String>? patientIds;
+        
+        if (userType == 'patient') {
+          // For patients, generate a unique PID
+          pid = PatientService.generatePID();
+        } else if (userType == 'doctor') {
+          // For doctors, initialize empty patient list
+          patientIds = [];
+        }
+        
         // Create user model
         UserModel userModel = UserModel(
           uid: userCredential.user!.uid,
@@ -31,6 +44,8 @@ class AuthService {
           name: name,
           userType: userType,
           phoneNumber: phoneNumber,
+          pid: pid,
+          patientIds: patientIds,
         );
 
         // Save user to Firestore
