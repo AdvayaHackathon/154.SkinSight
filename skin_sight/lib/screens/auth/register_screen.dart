@@ -5,7 +5,7 @@ import '../home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isDoctor;
-  const RegisterScreen({Key? key, this.isDoctor = false}) : super(key: key);
+  const RegisterScreen({super.key, this.isDoctor = false});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();

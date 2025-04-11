@@ -9,7 +9,7 @@ import 'review_patient_report_screen.dart';
 class PatientDetailsScreen extends StatefulWidget {
   final UserModel patient;
   
-  const PatientDetailsScreen({Key? key, required this.patient}) : super(key: key);
+  const PatientDetailsScreen({super.key, required this.patient});
 
   @override
   State<PatientDetailsScreen> createState() => _PatientDetailsScreenState();
@@ -137,9 +137,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                             icon: const Icon(Icons.arrow_back, color: Colors.white),
                             onPressed: () => Navigator.pop(context),
                           ),
-                          Text(
+                          const Text(
                             'Patient Details',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -781,11 +781,11 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.orange.shade200),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.pending, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                        Icon(Icons.pending, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Expanded(
                           child: Text(
                             'This report is awaiting your review',
                             style: TextStyle(color: Colors.orange),

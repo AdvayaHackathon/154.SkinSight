@@ -8,10 +8,10 @@ class ReviewPatientReportScreen extends StatefulWidget {
   final UserModel patient;
   
   const ReviewPatientReportScreen({
-    Key? key, 
+    super.key, 
     required this.report, 
     required this.patient,
-  }) : super(key: key);
+  });
 
   @override
   State<ReviewPatientReportScreen> createState() => _ReviewPatientReportScreenState();
@@ -138,8 +138,8 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.grey.shade400),
                     ),
-                    child: Center(
-                      child: const Text('Image Preview'),
+                    child: const Center(
+                      child: Text('Image Preview'),
                       // In a real app, you'd load the image:
                       // Image.network(
                       //   widget.report.imageUrl!,

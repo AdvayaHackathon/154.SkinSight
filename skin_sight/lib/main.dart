@@ -23,11 +23,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFF0A8754),
-        colorScheme: ColorScheme.light(
-          primary: const Color(0xFF0A8754),
-          secondary: const Color(0xFF2D8CFF),
-          error: const Color(0xFFDC3545),
-          background: const Color(0xFFF8F9FA),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF0A8754),
+          secondary: Color(0xFF2D8CFF),
+          error: Color(0xFFDC3545),
+          surface: Color(0xFFF8F9FA),
         ),
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         appBarTheme: const AppBarTheme(
@@ -91,7 +91,7 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();

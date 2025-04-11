@@ -8,7 +8,7 @@ import 'patient/patient_dashboard.dart';
 class HomeScreen extends StatefulWidget {
   final UserModel user;
   
-  const HomeScreen({Key? key, required this.user}) : super(key: key);
+  const HomeScreen({super.key, required this.user});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -88,13 +88,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF0A8754),  // Deep green
-              const Color(0xFF4CB88A),  // Medium green
+              Color(0xFF0A8754),  // Deep green
+              Color(0xFF4CB88A),  // Medium green
             ],
           ),
         ),

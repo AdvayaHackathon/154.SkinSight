@@ -8,7 +8,7 @@ import '../../services/storage_service.dart';
 class AddPatientReportScreen extends StatefulWidget {
   final UserModel patient;
   
-  const AddPatientReportScreen({Key? key, required this.patient}) : super(key: key);
+  const AddPatientReportScreen({super.key, required this.patient});
 
   @override
   State<AddPatientReportScreen> createState() => _AddPatientReportScreenState();
@@ -579,9 +579,9 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : Row(
+                        : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Icon(Icons.send),
                               SizedBox(width: 8),
                               Text(

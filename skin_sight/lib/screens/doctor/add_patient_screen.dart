@@ -5,7 +5,7 @@ import '../../utils/validators.dart';
 class AddPatientScreen extends StatefulWidget {
   final String doctorId;
   
-  const AddPatientScreen({Key? key, required this.doctorId}) : super(key: key);
+  const AddPatientScreen({super.key, required this.doctorId});
 
   @override
   State<AddPatientScreen> createState() => _AddPatientScreenState();

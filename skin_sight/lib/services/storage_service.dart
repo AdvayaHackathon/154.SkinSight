@@ -6,7 +6,7 @@ import 'firebase_service.dart';
 
 class StorageService {
   static final FirebaseStorage _storage = FirebaseStorage.instance;
-  static final String _bucketUrl = 'gs://skinsight-916ed.appspot.com';
+  static const String _bucketUrl = 'gs://skinsight-916ed.appspot.com';
   
   // Upload image to Firebase Storage
   static Future<String?> uploadImage(XFile imageFile, String folder) async {

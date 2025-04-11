@@ -9,7 +9,7 @@ import 'patient_details_screen.dart';
 class DoctorDashboard extends StatefulWidget {
   final UserModel user;
   
-  const DoctorDashboard({Key? key, required this.user}) : super(key: key);
+  const DoctorDashboard({super.key, required this.user});
 
   @override
   State<DoctorDashboard> createState() => _DoctorDashboardState();

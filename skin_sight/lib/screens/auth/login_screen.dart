@@ -5,7 +5,7 @@ import '../home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isDoctor;
-  const LoginScreen({Key? key, this.isDoctor = false}) : super(key: key);
+  const LoginScreen({super.key, this.isDoctor = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();

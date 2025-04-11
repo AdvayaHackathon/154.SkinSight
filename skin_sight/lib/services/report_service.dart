@@ -21,11 +21,6 @@ class ReportService {
   }) async {
     try {
       // Ensure Firestore is initialized
-      if (_firestore == null) {
-        throw Exception('Firestore is not initialized properly');
-      }
-      
-      // Create a new document reference
       final docRef = _reportsCollection.doc();
       
       // Create report model

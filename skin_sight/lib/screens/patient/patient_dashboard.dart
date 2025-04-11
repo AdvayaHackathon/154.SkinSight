@@ -8,7 +8,7 @@ import 'add_patient_report_screen.dart';
 class PatientDashboard extends StatefulWidget {
   final UserModel user;
   
-  const PatientDashboard({Key? key, required this.user}) : super(key: key);
+  const PatientDashboard({super.key, required this.user});
 
   @override
   State<PatientDashboard> createState() => _PatientDashboardState();
@@ -639,11 +639,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.orange.shade200),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.pending, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                        Icon(Icons.pending, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Expanded(
                           child: Text(
                             'This report is pending review by your doctor',
                             style: TextStyle(color: Colors.orange),

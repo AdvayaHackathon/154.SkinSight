@@ -11,10 +11,10 @@ class AddReportScreen extends StatefulWidget {
   final ReportModel? reportToEdit;
   
   const AddReportScreen({
-    Key? key, 
+    super.key, 
     required this.patient,
     this.reportToEdit,
-  }) : super(key: key);
+  });
 
   @override
   State<AddReportScreen> createState() => _AddReportScreenState();
@@ -735,9 +735,9 @@ class _AddReportScreenState extends State<AddReportScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : Row(
+                                : const Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
+                                    children: [
                                       Icon(Icons.save),
                                       SizedBox(width: 8),
                                       Text(
