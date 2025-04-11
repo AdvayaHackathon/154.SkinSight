@@ -10,6 +10,7 @@ class ReportModel {
   final String severity; // e.g., "Mild", "Moderate", "Severe"
   final DateTime timestamp;
   final String? notes;
+  final String bodyLocation; // Body location where the image was taken
   final Map<String, dynamic>? additionalData;
 
   ReportModel({
@@ -22,6 +23,7 @@ class ReportModel {
     this.imageUrl,
     this.diagnosis,
     this.notes,
+    this.bodyLocation = 'Skin', // Default to 'Skin' if not specified
     this.additionalData,
   });
 
@@ -36,6 +38,7 @@ class ReportModel {
       severity: json['severity'] ?? 'Unknown',
       timestamp: (json['timestamp'] as Timestamp).toDate(),
       notes: json['notes'],
+      bodyLocation: json['bodyLocation'] ?? 'Skin',
       additionalData: json['additionalData'],
     );
   }
@@ -51,6 +54,7 @@ class ReportModel {
       'severity': severity,
       'timestamp': Timestamp.fromDate(timestamp),
       'notes': notes,
+      'bodyLocation': bodyLocation,
       'additionalData': additionalData,
     };
   }

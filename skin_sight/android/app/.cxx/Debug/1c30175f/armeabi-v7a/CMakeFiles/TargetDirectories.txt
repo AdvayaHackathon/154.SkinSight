@@ -1,0 +1,2 @@
+/Users/gaurav/Developer/Code/154.SkinSight/skin_sight/android/app/.cxx/Debug/1c30175f/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/gaurav/Developer/Code/154.SkinSight/skin_sight/android/app/.cxx/Debug/1c30175f/armeabi-v7a/CMakeFiles/rebuild_cache.dir

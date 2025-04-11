@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos of psoriasis areas for tracking and comparing over time</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photos access to save and retrieve psoriasis condition images</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app does not use the microphone</string>
 </dict>
 </plist>

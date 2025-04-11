@@ -18,6 +18,7 @@ class ReportService {
     String? imageUrl,
     String? diagnosis,
     String? notes,
+    String bodyLocation = 'Skin',
   }) async {
     try {
       // Ensure Firestore is initialized
@@ -34,6 +35,7 @@ class ReportService {
         imageUrl: imageUrl,
         diagnosis: diagnosis ?? 'Pending diagnosis',
         notes: notes,
+        bodyLocation: bodyLocation,
       );
       
       // Save to Firestore with explicit error handling
@@ -175,6 +177,7 @@ class ReportService {
     String? diagnosis,
     String? imageUrl,
     String? notes,
+    String? bodyLocation,
   }) async {
     try {
       // Get the current report
@@ -191,6 +194,7 @@ class ReportService {
       if (diagnosis != null) updateData['diagnosis'] = diagnosis;
       if (imageUrl != null) updateData['imageUrl'] = imageUrl;
       if (notes != null) updateData['notes'] = notes;
+      if (bodyLocation != null) updateData['bodyLocation'] = bodyLocation;
       
       // Add timestamp for the update
       updateData['lastUpdated'] = FieldValue.serverTimestamp();

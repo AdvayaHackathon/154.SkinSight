@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/gaurav/Developer/FlutterSDK/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/gaurav/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/gaurav/Developer/Code/154.SkinSight/skin_sight/android/app/.cxx/Debug/1c30175f/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/gaurav/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/gaurav/Developer/Code/154.SkinSight/skin_sight/android/app/.cxx/Debug/1c30175f/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

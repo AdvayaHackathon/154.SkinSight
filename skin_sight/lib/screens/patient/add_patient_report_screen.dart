@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
 import '../../services/storage_service.dart';
+import 'camera_overlay_screen.dart';
 
 class AddPatientReportScreen extends StatefulWidget {
   final UserModel patient;
@@ -20,6 +21,7 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   final TextEditingController _notesController = TextEditingController();
   
   String _selectedSeverity = 'Mild';
+  String _selectedBodyLocation = 'Skin'; // Default body location
   String? _imageUrl;
   XFile? _selectedImage;
   
@@ -27,6 +29,10 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   String? _errorMessage;
 
   final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
+  final List<String> _bodyLocations = [
+    'Skin', 'Scalp', 'Face', 'Arms', 'Hands', 'Chest', 
+    'Back', 'Abdomen', 'Legs', 'Feet', 'Nails', 'Other'
+  ];
 
   @override
   void dispose() {
@@ -52,7 +58,20 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
 
   Future<void> _takePicture() async {
     try {
-      final XFile? image = await StorageService.pickImage(source: ImageSource.camera);
+      // Get the last image for this body location
+      final XFile? lastImage = await StorageService.getLastImage(_selectedBodyLocation);
+      
+      // Navigate to the custom camera screen with overlay
+      final XFile? image = await Navigator.push<XFile>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CameraOverlayScreen(
+            bodyLocation: _selectedBodyLocation,
+            previousImage: lastImage,
+          ),
+        ),
+      );
+      
       if (image != null) {
         setState(() {
           _selectedImage = image;
@@ -60,9 +79,13 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error taking picture: ${e.toString()}')),
-      );
+      // Don't pop back if there's an error
+      debugPrint('Error in camera flow: ${e.toString()}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error taking picture: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -124,6 +147,7 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
           diagnosis: 'Awaiting doctor review', // Default diagnosis until doctor reviews
           imageUrl: _imageUrl,
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          bodyLocation: _selectedBodyLocation, // Add body location to report
         );
 
         if (mounted) {
@@ -336,6 +360,37 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                                         ),
                             ),
                             const SizedBox(height: 16),
+                            // Body Location Selector
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  border: InputBorder.none,
+                                  hintText: 'Select body location',
+                                  labelText: 'Body Area',
+                                ),
+                                value: _selectedBodyLocation,
+                                isExpanded: true,
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0A8754)),
+                                items: _bodyLocations.map((location) {
+                                  return DropdownMenuItem(
+                                    value: location,
+                                    child: Text(location),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedBodyLocation = value!;
+                                  });
+                                },
+                              ),
+                            ),
                             Row(
                               children: [
                                 Expanded(
