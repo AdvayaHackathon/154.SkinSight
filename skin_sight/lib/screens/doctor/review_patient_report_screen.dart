@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../models/ai_analysis_model.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
+import '../../widgets/ai_analysis_button.dart';
 
 class ReviewPatientReportScreen extends StatefulWidget {
   final ReportModel report;
@@ -25,7 +27,9 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
   
   String _selectedSeverity = 'Mild';
   bool _isLoading = false;
+  bool _hasAiAnalysis = false;
   String? _errorMessage;
+  AiAnalysisModel? _aiAnalysis;
 
   final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
 
@@ -36,6 +40,16 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
     _selectedSeverity = widget.report.severity;
     _diagnosisController.text = widget.report.diagnosis ?? '';
     _notesController.text = widget.report.notes ?? '';
+    
+    // Check if report has AI analysis data
+    if (widget.report.additionalData != null) {
+      try {
+        _aiAnalysis = AiAnalysisModel.fromJson(widget.report.additionalData!);
+        _hasAiAnalysis = true;
+      } catch (e) {
+        print('Error parsing AI analysis data: $e');
+      }
+    }
   }
 
   @override
@@ -230,6 +244,20 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
                 ),
                 const SizedBox(height: 24),
                 
+                // AI Analysis Button
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: AiAnalysisButton(
+                      existingAnalysis: _aiAnalysis,
+                      bodyRegion: widget.report.additionalData?['pasi_assessment']?['body_region'] ?? 'trunk',
+                      imageUrl: widget.report.imageUrl,
+                    ),
+                  ),
+                ),
+                
                 // Error Message
                 if (_errorMessage != null)
                   Padding(
@@ -260,6 +288,8 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
     );
   }
   
+
+
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }

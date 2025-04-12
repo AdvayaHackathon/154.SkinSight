@@ -18,6 +18,7 @@ class ReportService {
     String? imageUrl,
     String? diagnosis,
     String? notes,
+    Map<String, dynamic>? additionalData,
   }) async {
     try {
       // Ensure Firestore is initialized
@@ -34,6 +35,7 @@ class ReportService {
         imageUrl: imageUrl,
         diagnosis: diagnosis ?? 'Pending diagnosis',
         notes: notes,
+        additionalData: additionalData,
       );
       
       // Save to Firestore with explicit error handling

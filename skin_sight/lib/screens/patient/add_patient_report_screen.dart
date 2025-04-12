@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../models/ai_analysis_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
 import '../../services/storage_service.dart';
+import '../../widgets/ai_analysis_button.dart';
 
 class AddPatientReportScreen extends StatefulWidget {
   final UserModel patient;
@@ -19,14 +21,16 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
   
   final TextEditingController _notesController = TextEditingController();
   
-  String _selectedSeverity = 'Mild';
+  String _selectedBodyRegion = 'trunk';
   String? _imageUrl;
   XFile? _selectedImage;
   
   bool _isLoading = false;
+  bool _isAnalyzing = false;
   String? _errorMessage;
+  AiAnalysisModel? _aiAnalysis;
 
-  final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
+  final List<String> _bodyRegions = ['head', 'trunk', 'upper_limbs', 'lower_limbs'];
 
   @override
   void dispose() {
@@ -64,6 +68,14 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
         SnackBar(content: Text('Error taking picture: ${e.toString()}')),
       );
     }
+  }
+
+  // Handle AI analysis completion
+  void _onAnalysisComplete(AiAnalysisModel analysis) {
+    setState(() {
+      _aiAnalysis = analysis;
+      _isAnalyzing = false;
+    });
   }
 
   Future<void> _addReport() async {
@@ -115,15 +127,23 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
             throw Exception('Failed to upload image. Please try again.');
           }
         }
+        
+        // Determine severity from AI analysis if available
+        String severity = 'Mild';
+        if (_aiAnalysis != null) {
+          severity = _aiAnalysis!.diagnosis.severity;
+        }
 
         final report = await ReportService.addReport(
           patientId: widget.patient.uid,
           doctorId: widget.patient.doctorId!,
           pid: widget.patient.pid!,
-          severity: _selectedSeverity,
+          severity: severity,
           diagnosis: 'Awaiting doctor review', // Default diagnosis until doctor reviews
           imageUrl: _imageUrl,
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          // Store AI analysis results if available
+          additionalData: _aiAnalysis != null ? _aiAnalysis!.toJson() : null,
         );
 
         if (mounted) {
@@ -445,24 +465,31 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                                 decoration: const InputDecoration(
                                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   border: InputBorder.none,
-                                  hintText: 'Select severity level',
+                                  hintText: 'Select body region',
                                 ),
-                                value: _selectedSeverity,
+                                value: _selectedBodyRegion,
                                 isExpanded: true,
                                 icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0A8754)),
-                                items: _severityLevels.map((severity) {
+                                items: _bodyRegions.map((region) {
+                                  // Convert to display format (capitalize and replace underscores)
+                                  String displayName = region.replaceAll('_', ' ');
+                                  displayName = displayName.split(' ').map((word) => 
+                                    word.substring(0, 1).toUpperCase() + word.substring(1)
+                                  ).join(' ');
+                                  
                                   return DropdownMenuItem(
-                                    value: severity,
-                                    child: Text(severity),
+                                    value: region,
+                                    child: Text(displayName),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedSeverity = value!;
+                                    _selectedBodyRegion = value!;
                                   });
                                 },
                               ),
                             ),
+                            const SizedBox(height: 24),
                             const SizedBox(height: 24),
                             
                             const Text(
@@ -554,6 +581,22 @@ class _AddPatientReportScreenState extends State<AddPatientReportScreen> {
                   ),
                 
                 const SizedBox(height: 24),
+                
+                // AI Analysis Button
+                if (_selectedImage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: AiAnalysisButton(
+                        imageFile: _selectedImage != null ? File(_selectedImage!.path) : null,
+                        bodyRegion: _selectedBodyRegion,
+                        existingAnalysis: _aiAnalysis,
+                        onAnalysisComplete: _onAnalysisComplete,
+                      ),
+                    ),
+                  ),
                 
                 // Submit Report Button
                 SizedBox(

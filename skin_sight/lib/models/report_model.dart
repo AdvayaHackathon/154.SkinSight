@@ -10,7 +10,7 @@ class ReportModel {
   final String severity; // e.g., "Mild", "Moderate", "Severe"
   final DateTime timestamp;
   final String? notes;
-  final Map<String, dynamic>? additionalData;
+  final Map<String, dynamic>? additionalData; // For AI analysis data
 
   ReportModel({
     required this.id,
