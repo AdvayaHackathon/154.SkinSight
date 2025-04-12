@@ -4,9 +4,10 @@ import '../../models/report_model.dart';
 import '../../services/report_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/report_card.dart';
-import '../../screens/ai_analysis_screen.dart';
+import '../../screens/common/ai_analysis_screen.dart';
 import '../../models/ai_analysis_model.dart';
-import 'add_patient_report_screen.dart';
+import '../../screens/common/report_management_screen.dart';
+import '../../screens/common/report_details_screen.dart';
 
 class PatientDashboard extends StatefulWidget {
   final UserModel user;
@@ -167,7 +168,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddPatientReportScreen(patient: widget.user),
+              builder: (context) => ReportManagementScreen(
+                user: widget.user,
+              ),
             ),
           ).then((_) => _loadReports());
         },
@@ -190,7 +193,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
             return ReportCard(
               report: report,
               patient: widget.user,
-              onTap: () => _showReportDetails(report),
+              onTap: () => _navigateToReportDetails(report),
               showPatientInfo: false,
             );
           },
@@ -237,7 +240,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddPatientReportScreen(patient: widget.user),
+                    builder: (context) => ReportManagementScreen(
+                      user: widget.user,
+                    ),
                   ),
                 ).then((_) => _loadReports());
               },
@@ -258,170 +263,15 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 
-  void _showReportDetails(ReportModel report) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Report Details',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Image preview
-              if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    children: [
-                      Image.network(
-                        report.imageUrl!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 200,
-                            width: double.infinity,
-                            color: Colors.grey.shade200,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.broken_image,
-                                  size: 50,
-                                  color: Colors.grey.shade700,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Failed to load image',
-                                  style: TextStyle(color: Colors.red.shade700),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              
-              // Report details
-              _buildInfoRow('Date:', _formatDate(report.timestamp)),
-              _buildInfoRow('Severity:', report.severity),
-              if (report.diagnosis != null)
-                _buildInfoRow('Diagnosis:', report.diagnosis!),
-              
-              // Doctor's notes
-              if (report.notes != null && report.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'Doctor\'s Notes:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Text(report.notes!),
-                ),
-              ],
-              
-              // AI Analysis button
-              if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      AiAnalysisModel? aiAnalysis;
-                      if (report.additionalData != null) {
-                        try {
-                          aiAnalysis = AiAnalysisModel.fromJson(report.additionalData!);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AiAnalysisScreen(analysis: aiAnalysis!),
-                            ),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error loading AI analysis: $e')),
-                          );
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No AI analysis data available')),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.analytics),
-                    label: const Text('View AI Analysis'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-              
-              // Status indicator
-              if (report.diagnosis == 'Awaiting doctor review') ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.pending, color: Colors.orange),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This report is pending review by your doctor',
-                          style: TextStyle(color: Colors.orange),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
+  void _navigateToReportDetails(ReportModel report) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReportDetailsScreen(
+          report: report,
+          viewer: widget.user,
+          patient: widget.user,
+          onReportUpdated: () => _loadReports(),
         ),
       ),
     );

@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../models/ai_analysis_model.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
-import '../../widgets/ai_analysis_button.dart';
 
 class ReviewPatientReportScreen extends StatefulWidget {
   final ReportModel report;
   final UserModel patient;
   
   const ReviewPatientReportScreen({
-    super.key, 
-    required this.report, 
+    Key? key,
+    required this.report,
     required this.patient,
-  });
+  }) : super(key: key);
 
   @override
   State<ReviewPatientReportScreen> createState() => _ReviewPatientReportScreenState();
@@ -21,34 +19,33 @@ class ReviewPatientReportScreen extends StatefulWidget {
 
 class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
   final _formKey = GlobalKey<FormState>();
-  
   final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   
-  String _selectedSeverity = 'Mild';
+  String _selectedSeverity = 'Moderate';
   bool _isLoading = false;
-  bool _hasAiAnalysis = false;
   String? _errorMessage;
-  AiAnalysisModel? _aiAnalysis;
-
-  final List<String> _severityLevels = ['Mild', 'Moderate', 'Severe', 'Very Severe'];
+  
+  final List<String> _severityLevels = [
+    'Mild',
+    'Moderate',
+    'Severe',
+    'Very Severe',
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize with existing report data
-    _selectedSeverity = widget.report.severity;
-    _diagnosisController.text = widget.report.diagnosis ?? '';
+    
+    // Initialize with existing data if available
+    _diagnosisController.text = widget.report.diagnosis == 'Awaiting doctor review'
+        ? ''
+        : widget.report.diagnosis ?? '';
+        
     _notesController.text = widget.report.notes ?? '';
     
-    // Check if report has AI analysis data
-    if (widget.report.additionalData != null) {
-      try {
-        _aiAnalysis = AiAnalysisModel.fromJson(widget.report.additionalData!);
-        _hasAiAnalysis = true;
-      } catch (e) {
-        print('Error parsing AI analysis data: $e');
-      }
+    if (widget.report.severity.isNotEmpty) {
+      _selectedSeverity = widget.report.severity;
     }
   }
 
@@ -59,7 +56,7 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
     super.dispose();
   }
 
-  Future<void> _updateReport() async {
+  Future<void> _submitReview() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -67,27 +64,41 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
       });
 
       try {
-        // Update in Firestore using the new method signature
-        await ReportService.updateReport(
+        final updatedReport = await ReportService.updateReport(
           reportId: widget.report.id,
           severity: _selectedSeverity,
           diagnosis: _diagnosisController.text.trim(),
-          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          notes: _notesController.text.trim(),
         );
-
+        
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Report updated successfully')),
-          );
-          
-          // Return true to indicate success
-          Navigator.pop(context, true);
+          if (updatedReport.id.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Report reviewed successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            Navigator.pop(context, true);
+          } else {
+            throw Exception('Failed to update report');
+          }
         }
       } catch (e) {
-        setState(() {
-          _errorMessage = 'Error updating report: ${e.toString()}';
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = e.toString();
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -97,200 +108,263 @@ class _ReviewPatientReportScreenState extends State<ReviewPatientReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Review Patient Report'),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Patient Info Card
-                Card(
-                  color: Colors.blue.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Patient Info Card
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
                           children: [
-                            const Icon(Icons.person, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.patient.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            CircleAvatar(
+                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                              radius: 24,
+                              child: Icon(
+                                Icons.person,
+                                color: Theme.of(context).primaryColor,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.patient.name,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (widget.patient.pid != null)
+                                    Text(
+                                      'ID: ${widget.patient.pid}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text('Patient ID: ${widget.patient.pid}'),
-                        const SizedBox(height: 4),
-                        Text('Submitted on: ${_formatDate(widget.report.timestamp)}'),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Patient's Image
-                if (widget.report.imageUrl != null) ...[
-                  const Text(
-                    'Patient\'s Image:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade400),
+                    const SizedBox(height: 24),
+                    
+                    // Report Image
+                    if (widget.report.imageUrl != null) ...[
+                      _buildSectionHeader('Patient\'s Photo'),
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Container(
+                                height: 200,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    widget.report.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'Failed to load image',
+                                              style: TextStyle(color: Colors.grey.shade700),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    
+                    // Severity Selection
+                    _buildSectionHeader('Update Severity'),
+                    Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Severity Level',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          value: _selectedSeverity,
+                          items: _severityLevels.map((severity) {
+                            return DropdownMenuItem(
+                              value: severity,
+                              child: Text(severity),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedSeverity = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
                     ),
-                    child: const Center(
-                      child: Text('Image Preview'),
-                      // In a real app, you'd load the image:
-                      // Image.network(
-                      //   widget.report.imageUrl!,
-                      //   fit: BoxFit.cover,
-                      // ),
+                    const SizedBox(height: 24),
+                    
+                    // Diagnosis Field
+                    _buildSectionHeader('Provide Diagnosis'),
+                    Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextFormField(
+                          controller: _diagnosisController,
+                          decoration: InputDecoration(
+                            labelText: 'Diagnosis',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            hintText: 'Enter your professional diagnosis',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter a diagnosis';
+                            }
+                            return null;
+                          },
+                          maxLines: 3,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                // Patient's Notes
-                if (widget.report.notes != null && widget.report.notes!.isNotEmpty) ...[
-                  const Text(
-                    'Patient\'s Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
+                    const SizedBox(height: 24),
+                    
+                    // Notes Field
+                    _buildSectionHeader('Additional Notes'),
+                    Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextFormField(
+                          controller: _notesController,
+                          decoration: InputDecoration(
+                            labelText: 'Notes (Optional)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            hintText: 'Enter any additional information',
+                          ),
+                          maxLines: 5,
+                        ),
+                      ),
                     ),
-                    child: Text(widget.report.notes!),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                const Divider(),
-                const SizedBox(height: 8),
-                
-                const Text(
-                  'Doctor\'s Assessment',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Severity Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Severity Assessment',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: _selectedSeverity,
-                  items: _severityLevels.map((severity) {
-                    return DropdownMenuItem(
-                      value: severity,
-                      child: Text(severity),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSeverity = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Diagnosis Field
-                TextFormField(
-                  controller: _diagnosisController,
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnosis',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a diagnosis';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Doctor's Notes Field
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Additional Notes',
-                    hintText: 'Add treatment recommendations, follow-up instructions, etc.',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // AI Analysis Button
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: AiAnalysisButton(
-                      existingAnalysis: _aiAnalysis,
-                      bodyRegion: widget.report.additionalData?['pasi_assessment']?['body_region'] ?? 'trunk',
-                      imageUrl: widget.report.imageUrl,
+                    
+                    // Error Message
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                      
+                    const SizedBox(height: 32),
+                    
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitReview,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Submit Review',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                
-                // Error Message
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                
-                // Update Report Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _updateReport,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Save Assessment', style: TextStyle(fontSize: 16, color: Colors.white)),
-                ),
-              ],
+              ),
             ),
-          ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).primaryColor,
         ),
       ),
     );
-  }
-  
-
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 } 

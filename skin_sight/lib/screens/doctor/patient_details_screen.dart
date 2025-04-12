@@ -3,13 +3,18 @@ import '../../models/user_model.dart';
 import '../../models/report_model.dart';
 import '../../services/report_service.dart';
 import '../../services/patient_service.dart';
-import 'add_report_screen.dart';
-import 'review_patient_report_screen.dart';
+import '../../screens/common/report_management_screen.dart';
+import '../../screens/common/report_details_screen.dart';
 
 class PatientDetailsScreen extends StatefulWidget {
   final UserModel patient;
+  final UserModel doctorUser;
   
-  const PatientDetailsScreen({super.key, required this.patient});
+  const PatientDetailsScreen({
+    super.key, 
+    required this.patient,
+    required this.doctorUser,
+  });
 
   @override
   State<PatientDetailsScreen> createState() => _PatientDetailsScreenState();
@@ -321,7 +326,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddReportScreen(
+              builder: (context) => ReportManagementScreen(
+                user: widget.doctorUser,
                 patient: widget.patient,
               ),
             ),
@@ -521,7 +527,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AddReportScreen(
+                                builder: (context) => ReportManagementScreen(
+                                  user: widget.doctorUser,
                                   patient: widget.patient,
                                 ),
                               ),
@@ -596,7 +603,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AddReportScreen(patient: widget.patient),
+                  builder: (context) => ReportManagementScreen(
+                    user: widget.doctorUser,
+                    patient: widget.patient,
+                  ),
                 ),
               );
               
@@ -604,14 +614,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                 _loadReports();
               }
             },
-            icon: const Icon(Icons.add_photo_alternate),
-            label: const Text('Add First Report'),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Report'),
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ],
@@ -620,215 +626,14 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   }
 
   void _showReportDetails(ReportModel report) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Report Details',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                if (report.imageUrl != null) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Skin Image:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () {
-                      // Show full screen image
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            appBar: AppBar(
-                              title: const Text('Full Image'),
-                            ),
-                            body: Center(
-                              child: InteractiveViewer(
-                                panEnabled: true,
-                                boundaryMargin: const EdgeInsets.all(20),
-                                minScale: 0.5,
-                                maxScale: 4,
-                                child: Image.network(
-                                  report.imageUrl!,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.broken_image, size: 60, color: Colors.red),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Failed to load image',
-                                          style: TextStyle(color: Colors.red.shade700),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              report.imageUrl!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.broken_image, size: 40, color: Colors.red),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Failed to load image',
-                                        style: TextStyle(color: Colors.red.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Positioned(
-                            right: 8,
-                            bottom: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                Icons.zoom_in,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                _buildInfoRow('Date:', _formatDate(report.timestamp)),
-                _buildInfoRow('Severity:', report.severity),
-                if (report.diagnosis != null)
-                  _buildInfoRow('Diagnosis:', report.diagnosis!),
-                if (report.notes != null && report.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Notes:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Text(report.notes!),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                if (report.diagnosis == 'Awaiting doctor review')
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.pending, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'This report is awaiting your review',
-                            style: TextStyle(color: Colors.orange),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (report.diagnosis == 'Awaiting doctor review')
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context); // Close dialog
-                          // Navigate to the review screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ReviewPatientReportScreen(
-                                report: report,
-                                patient: widget.patient,
-                              ),
-                            ),
-                          ).then((result) {
-                            if (result == true) {
-                              _loadReports();
-                            }
-                          });
-                        },
-                        icon: const Icon(Icons.rate_review),
-                        label: const Text('Review Report'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReportDetailsScreen(
+          report: report,
+          viewer: widget.doctorUser,
+          patient: widget.patient,
+          onReportUpdated: () => _loadReports(),
         ),
       ),
     );

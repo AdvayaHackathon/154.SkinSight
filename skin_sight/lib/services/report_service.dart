@@ -9,6 +9,58 @@ class ReportService {
   static final CollectionReference _usersCollection = _firestore.collection('users');
   static final CollectionReference _reportsCollection = _firestore.collection('reports');
   
+  // Add a report from a patient without doctor
+  static Future<ReportModel> addPatientReport({
+    required String patientId,
+    required String severity,
+    required String bodyRegion,
+    String? imageUrl,
+    String? notes,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    try {
+      // Ensure Firestore is initialized
+      final docRef = _reportsCollection.doc();
+      
+      // Create report model
+      final report = ReportModel(
+        id: docRef.id,
+        patientId: patientId,
+        doctorId: '', // No doctor assigned yet
+        pid: '', // No PID assigned yet
+        severity: severity,
+        timestamp: DateTime.now(),
+        imageUrl: imageUrl,
+        diagnosis: 'Awaiting doctor review', // Default diagnosis
+        notes: notes,
+        additionalData: additionalData ?? {'bodyRegion': bodyRegion},
+      );
+      
+      // Save to Firestore with explicit error handling
+      await docRef.set(report.toJson())
+          .timeout(const Duration(seconds: 10), 
+              onTimeout: () => throw Exception('Connection timeout. Please check your internet connection.'));
+      
+      // Verify the document was created
+      final docSnapshot = await docRef.get();
+      if (!docSnapshot.exists) {
+        throw Exception('Failed to create report. Please try again.');
+      }
+      
+      return report;
+    } catch (e) {
+      print('Error in addPatientReport: $e');
+      if (e is FirebaseException) {
+        if (e.code == 'permission-denied') {
+          throw Exception('Permission denied: You don\'t have access to add reports');
+        } else if (e.code == 'unavailable') {
+          throw Exception('Service unavailable. Please check your internet connection and try again.');
+        }
+      }
+      throw Exception('Failed to add report: ${e.toString()}');
+    }
+  }
+  
   // Add a new report
   static Future<ReportModel> addReport({
     required String patientId,

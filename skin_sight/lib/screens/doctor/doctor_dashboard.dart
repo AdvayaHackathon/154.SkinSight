@@ -249,7 +249,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PatientDetailsScreen(patient: patient),
+                  builder: (context) => PatientDetailsScreen(
+                    patient: patient,
+                    doctorUser: widget.user,
+                  ),
                 ),
               ).then((_) => _loadPatients());
             },
